@@ -12,6 +12,7 @@ type Module_stats struct {
 	data3g float64;
 	time3g int;
 	totaltime int;
+	count int;
 }
 
 func (m *Module_stats) Init() bool {
@@ -21,6 +22,7 @@ func (m *Module_stats) Init() bool {
 	m.data3g = 0;
 	m.time3g = 0;
 	m.totaltime = 0;
+	m.count = 0;
 
 	return true;
 }
@@ -33,6 +35,8 @@ func (m *Module_stats) HandleEvent(event lib.Event,
 								data float64,
 								spiketime float64,
 								islte bool) bool {
+	m.count ++;
+
 	m.state = lib.CLTE;
 
 	if islte {
@@ -98,7 +102,7 @@ func (m *Module_stats) GetServe3G() int {
 }
 
 func (m *Module_stats) GetTotal() int {
-	return 0;
+	return m.count;
 }
 
 func (m *Module_stats) GetTotalLTE() int {
@@ -124,6 +128,11 @@ func (m *Module_stats) GetTotalTime() int {
 func (m *Module_stats) Reset() bool {
 
 	return true;
+}
+
+/* Total trace time in hrs. */
+func (m *Module_stats) GetTotalTimeHR() float64 {
+	return float64(m.GetTotalTime())/3600.0;
 }
 
 func (m *Module_stats) GetFirstAvgDelayTransition() float64 {

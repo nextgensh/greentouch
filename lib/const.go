@@ -23,3 +23,4 @@ const Energy_lteto3g = 8.65;
 const Rolling_window_size = 5;
 const SpikeMin = 20;
 const SpikeWait = 3;
+const SpikeMinTime = 23;

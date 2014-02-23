@@ -28,6 +28,17 @@ func LookAhead(time int) (size int, bandwidth []Bandwidth){
 	return temp - time, Bandwidths[Bindex:temp];
 }
 
+func IsWasteful() bool {
+	for a:=Bindex; a < Bindex + SpikeMinTime &&
+						a < len(Bandwidths); a++ {
+		if GetBand(Bandwidths[a].Bandwidth) == CLTE {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 /* Method which calculates the energy-delay2 for falling down. */
 func EnergyDelayFall(islte bool, data float64) (fall bool) {
 	radios := InitRadios();
@@ -95,10 +106,17 @@ func IsDataSpike(time1, time2 int64, b_start int, bandwidth []Bandwidth) (
     hint_lte := false;  /* Tell me if I have been to the LTE range or not. */
     hint_wcdma := false;
 	flag := false;
+	timespent := 0;
 
     for ; b_start < len(bandwidth) && 
 					bandwidth[b_start].Timestamp <= time2; b_start++ { 
         c_bandwidth = bandwidth[b_start].Bandwidth;
+
+		timespent ++;
+
+		if !hint_lte && timespent > SpikeMinTime {
+			return false, data, spike_data_time;
+		}
 
         data = data + c_bandwidth;
 		current_state := GetBand(c_bandwidth);
@@ -119,7 +137,7 @@ func IsDataSpike(time1, time2 int64, b_start int, bandwidth []Bandwidth) (
         }
 
         if ((!hint_lte && hint_wcdma && bandwidth[b_start].Bandwidth == 0.0)) {
-			if data <= SpikeMin {
+			if  timespent <= SpikeMinTime {
 				data = 0;
 				hint_wcdma = false;
 			} else {
@@ -278,4 +296,8 @@ func InitRadios() []radio.IntRadio {
     s_radios := []radio.IntRadio{&s_radio_3g, &s_radio_lte};
 
     return s_radios;
+}
+
+func BitValue(bits int) int {
+	return int(math.Pow(2.0, float64(bits)));
 }

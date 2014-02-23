@@ -67,7 +67,7 @@ func main(){
 	arr_energy := make([]lib.Energy, len(arr_modules));
 
 	arr_names := []string{"LTE", "Reactive", "GTAverage", "GTO1", "GTO2",
-							"GTO2H", "Oracle", "3G", "GTS",
+							"GTO", "Oracle", "3G", "GTS",
 							"GTA", "GTO3", "GTO4", "GTO5",
 							"GTO1H", "GTO3H", "GTO4H", "GTO5H"};
 
@@ -83,8 +83,7 @@ func main(){
 
 	//fmt.Println(modgto2h.GetAvgSpikeTime());
 
-	//arr_order = []int{0, 1, 5, 6, 7};
-	arr_order = []int{};
+	arr_order = []int{0, 1, 5, 6, 7};
 	if printfmt == "energy" {
 		ltetotal := arr_energy[0].TotalEnergy();
 		for a:=0; a < len(arr_order); a++ {
@@ -118,7 +117,8 @@ func main(){
 			//			arr_modules[arr_order[a]].GetUnnecesary();
 			//correct := arr_modules[arr_order[a]].GetTotal() - wrong;
 			//norm := arr_modules[arr_order[a]].GetTotal();
-			fmt.Printf("%d %d \n",
+			fmt.Printf("%d %d %d \n",
+				arr_modules[arr_order[a]].GetTotalLTE(),
 				arr_modules[arr_order[a]].GetTotalLTE()-
 				arr_modules[arr_order[a]].GetMissed(),
 				arr_modules[arr_order[a]].GetMissed());
@@ -147,6 +147,19 @@ func main(){
 		fmt.Printf("%.4f %.4f\n", modstats.GetDataLTE(),
 									modstats.GetData3G());
 	}
+
+	if printfmt == "tracestats" {
+		modstats := modules.Module_stats{};
+		_, _, _ = StartSimulation(&modstats, -1);
+		fmt.Printf("%.4f %d %d %.4f\n", modstats.GetTotalTimeHR(),
+							modstats.GetTotalLTE(),
+							modstats.GetTotal()-
+							modstats.GetTotalLTE(),
+							(modstats.GetDataLTE()+
+							modstats.GetData3G())/1024.0);
+	}
+
+
 
 	if printfmt == "timestats" {
 		modstats := modules.Module_stats{};
@@ -190,7 +203,7 @@ func main(){
 	}
 
 	if printfmt == "visualize" {
-		_, _, graphic := StartSimulation(&modgto1h, lib.C3G);
+		_, _, graphic := StartSimulation(&modgto2h, lib.C3G);
 		for a:=0; a < len(graphic); a++ {
 			t, r := graphic[a].GetPoint();
 			if t > 0 {
@@ -271,9 +284,6 @@ func main(){
 		for a:=0; a < len(arr_order); a++ {
 			norm := arr_modules[arr_order[a]].GetTotal()-
 					arr_modules[arr_order[a]].GetTotalLTE();
-			if norm == 0 {
-				norm = 1;
-			}
 			fmt.Printf("%.4f \n",
 				((float64(arr_modules[arr_order[a]].GetUnnecesary())/
 				float64(norm)))*100);
@@ -291,6 +301,42 @@ func main(){
 			fmt.Printf("%.4f \n",
 				(1-(float64(arr_modules[arr_order[a]].GetMissed())/
 				float64(norm)))*100);
+		}
+		fmt.Println("");
+	}
+
+	if printfmt == "mastercompare" {
+		for a:=1; a <= 5; a++ {
+			for b:=1; b <=5; b++ {
+				mod := modules.Module_GTO2HN{};
+				mod.SetHistoryBit(a);
+				mod.SetPredictBit(b);
+				_, _, _ = StartSimulation(&mod, lib.C3G);
+				norm := mod.GetTotalLTE();
+				fmt.Printf("%d %d %.4f\n", a, b,
+					(1-(float64(mod.GetMissed())/
+					float64(norm)))*100);
+			}
+			//fmt.Println("");
+		}
+		fmt.Println("");
+	}
+
+	if printfmt == "mastercompare1" {
+		for a:=1; a <= 5; a++ {
+			for b:=1; b <=5; b++ {
+				mod := modules.Module_GTO2HN{};
+				mod.SetHistoryBit(a);
+				mod.SetPredictBit(b);
+				_, _, _ = StartSimulation(&mod, lib.C3G);
+				norm := mod.GetTotal()-
+						mod.GetTotalLTE();
+				fmt.Printf("%.4f ",
+					((float64(mod.GetUnnecesary())/
+					float64(norm)))*100);
+
+			}
+			fmt.Println("");
 		}
 		fmt.Println("");
 	}

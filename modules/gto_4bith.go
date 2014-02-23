@@ -72,7 +72,7 @@ func (m *Module_GTO4H) HandleEvent(event lib.Event,
 				}
 			}
 			m.jumpAssist(m.state, lib.CLTE, spiketime, true);
-			if !lib.ShouldISwitch(data, spiketime) {
+			if lib.IsWasteful() { 
 				m.unnecesary ++;
 			}
 		} else {

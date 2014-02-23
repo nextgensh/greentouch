@@ -82,9 +82,10 @@ func (m *Module_GTO2H) HandleEvent(event lib.Event,
 					m.first_delay_transition += m.GetHiddenLatency(spiketime);
 				}
 			}
-			if !islte || !lib.ShouldISwitch(data, spiketime) {
+			if lib.IsWasteful() {
 				m.unnecesary ++;
-			} else {
+			}
+			if islte {
 				m.delayHelp(spiketime, m.state, lib.CLTE);
 			}
 			m.jumpAssist(m.state, lib.CLTE, spiketime, true);
@@ -183,9 +184,10 @@ func (m *Module_GTO2H) delayHelp (spiketime float64, prev_state int,
 	if temp < 0.0 {
 		temp = 0.0;
 	}
-
-	m.delay_transition += temp;
-	m.avg_count ++;
+	if (prev_state == lib.C3G && current_state == lib.CLTE) {
+		m.delay_transition += temp;
+		m.avg_count ++;
+	}
 }
 
 /* 

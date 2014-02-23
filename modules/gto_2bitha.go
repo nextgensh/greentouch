@@ -264,7 +264,7 @@ func (m *Module_GTO2HA) GetDelayTransition() float64 {
 }
 
 func (m *Module_GTO2HA) GetAvgDelayTransition() float64 {
-	return m.GetDelayTransition() / float64(m.avg_count);
+	return m.GetDelayTransition() / float64(m.ltecount);
 }
 
 /* We go on-demand if we miss to serve something in lte. 
