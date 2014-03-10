@@ -38,8 +38,8 @@ type Module_GTO2HA struct {
 	event_seen bool;
 	reg_subtimeout int;
 	lasteventfallbit int;
-	lastreactivefallbit int;
 	lasteventname string;
+	lastreactivefallbit int;
 }
 
 func (m *Module_GTO2HA) Init() bool {
@@ -56,7 +56,6 @@ func (m *Module_GTO2HA) Init() bool {
 	m.first_avg_count = 0.0;
 	m.reg_timeout = 0;
 	m.event_seen = false;
-	m.reg_subtimeout = 0;
 	m.lasteventfallbit = 1;
 	eventtable2ha = make(map[string]EventSwitch2HA);
 

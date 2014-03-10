@@ -82,7 +82,7 @@ func (m *Module_GTO2H) HandleEvent(event lib.Event,
 					m.first_delay_transition += m.GetHiddenLatency(spiketime);
 				}
 			}
-			if lib.IsWasteful() {
+			if lib.IsWasteful(m.state) {
 				m.unnecesary ++;
 			}
 			if islte {

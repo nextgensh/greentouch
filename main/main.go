@@ -44,8 +44,8 @@ func main(){
 	modgto2h := modules.Module_GTO2H{};
 	modoracle := modules.Module_O{};
 	mod3g := modules.Module_3g{};
-	modgto2hs := modules.Module_GTO2HS{};
-	modgto2ha := modules.Module_GTO2HA{};
+	modgto4s := modules.Module_GTO4S{};
+	modgto4a := modules.Module_GTO4A{};
 	modgto3 := modules.Module_GTO3{};
 	modgto4 := modules.Module_GTO4{};
 	modgto5 := modules.Module_GTO5{};
@@ -58,7 +58,7 @@ func main(){
 									&modgto, &modgto1,
 									&modgto2, &modgto2h,
 									&modoracle, &mod3g,
-									&modgto2hs, &modgto2ha,
+									&modgto4s, &modgto4a,
 									&modgto3, &modgto4,
 									&modgto5, &modgto1h,
 									&modgto3h, &modgto4h,
@@ -67,8 +67,8 @@ func main(){
 	arr_energy := make([]lib.Energy, len(arr_modules));
 
 	arr_names := []string{"LTE", "Reactive", "GTAverage", "GTO1", "GTO2",
-							"GTO", "Oracle", "3G", "GTS",
-							"GTA", "GTO3", "GTO4", "GTO5",
+							"GTO2H", "Oracle", "3G", "GTS",
+							"GTA", "GTO3", "GT", "GTO5",
 							"GTO1H", "GTO3H", "GTO4H", "GTO5H"};
 
 	arr_order := []int{0, 1, 5, 6, 7, 8, 9, 3, 4, 10, 11, 12, 13, 14, 15, 16};
@@ -81,9 +81,11 @@ func main(){
 		}
 	}
 
-	//fmt.Println(modgto2h.GetAvgSpikeTime());
+	if printfmt == "spiketime" {
+		fmt.Printf("%.4f\n", (modgto4.GetAvgSpikeTime()));
+	}
 
-	arr_order = []int{0, 1, 5, 6, 7};
+	arr_order = []int{0, 7, 6, 1, 11};
 	if printfmt == "energy" {
 		ltetotal := arr_energy[0].TotalEnergy();
 		for a:=0; a < len(arr_order); a++ {
@@ -99,14 +101,32 @@ func main(){
 		fmt.Println("");
 	}
 
-	arr_order = []int{7, 1, 5, 6};
+	arr_order = []int{7, 1, 11};
 	if printfmt == "delay" {
 		for a:=0; a < len(arr_order); a++ {
 			i := arr_order[a];
-			fmt.Printf("%s %.4f\n", arr_names[i],
-						arr_modules[i].GetAvgDelayTransition()+
-						arr_modules[i].GetAvgDelayTransmission());
+			if i != 11 {
+				fmt.Printf("%s %.4f\n", arr_names[i],
+							arr_modules[i].GetAvgDelayTransition()+
+							arr_modules[i].GetAvgDelayTransmission());
+			} else {
+				fmt.Printf("%s %.4f %.4f\n", arr_names[i],
+							arr_modules[i].GetAvgDelayTransition()+
+							arr_modules[i].GetAvgDelayTransmission(),
+							modgto4.GetAvgDelayLearnTransition());
+			}
 		}
+		fmt.Println("");
+	}
+
+	if printfmt == "delaywaste" {
+		fmt.Printf("%.4f\n", modgto4.GetAvgDelayWasteTransition());
+	}
+
+	if printfmt == "compdelay" {
+		fmt.Printf("%.4f %.4f\n", modreactive.GetDelayTransition(),
+					modgto4.GetDelayTransition() +
+					modgto4.GetDelayWasteTransition());
 		fmt.Println("");
 	}
 
@@ -151,12 +171,14 @@ func main(){
 	if printfmt == "tracestats" {
 		modstats := modules.Module_stats{};
 		_, _, _ = StartSimulation(&modstats, -1);
-		fmt.Printf("%.4f %d %d %.4f\n", modstats.GetTotalTimeHR(),
+		fmt.Printf("%.4f %d %d %.4f %d %d\n", modstats.GetTotalTimeHR(),
 							modstats.GetTotalLTE(),
 							modstats.GetTotal()-
 							modstats.GetTotalLTE(),
 							(modstats.GetDataLTE()+
-							modstats.GetData3G())/1024.0);
+							modstats.GetData3G())/1024.0,
+							modgto4.UniqueLTE(),
+							modgto4.Unique3G());
 	}
 
 
@@ -203,7 +225,7 @@ func main(){
 	}
 
 	if printfmt == "visualize" {
-		_, _, graphic := StartSimulation(&modgto2h, lib.C3G);
+		_, _, graphic := StartSimulation(&modgto4s, lib.C3G);
 		for a:=0; a < len(graphic); a++ {
 			t, r := graphic[a].GetPoint();
 			if t > 0 {
@@ -256,7 +278,7 @@ func main(){
 		for a:=0; a < len(arr_order); a++ {
 			i := arr_order[a];
 			norm := arr_energy[0].TotalEnergy();
-			gto := (arr_energy[5].TotalEnergy() / norm) * 100;
+			gto := (arr_energy[11].TotalEnergy() / norm) * 100;
 			fmt.Printf("%.4f ",
 						((arr_energy[i].TotalEnergy() / norm) * 100) -
 							gto);
@@ -313,11 +335,11 @@ func main(){
 				mod.SetPredictBit(b);
 				_, _, _ = StartSimulation(&mod, lib.C3G);
 				norm := mod.GetTotalLTE();
-				fmt.Printf("%d %d %.4f\n", a, b,
+				fmt.Printf("%.4f ",
 					(1-(float64(mod.GetMissed())/
 					float64(norm)))*100);
 			}
-			//fmt.Println("");
+			fmt.Println("");
 		}
 		fmt.Println("");
 	}

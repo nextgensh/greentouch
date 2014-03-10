@@ -28,12 +28,24 @@ func LookAhead(time int) (size int, bandwidth []Bandwidth){
 	return temp - time, Bandwidths[Bindex:temp];
 }
 
-func IsWasteful() bool {
+func IsWasteful(state int) bool {
+
+	data := 0.0;
+
+	if state == CLTE {
+		return false;
+	}
+
 	for a:=Bindex; a < Bindex + SpikeMinTime &&
 						a < len(Bandwidths); a++ {
+		data += Bandwidths[a].Bandwidth;
 		if GetBand(Bandwidths[a].Bandwidth) == CLTE {
 			return false;
 		}
+	}
+
+	if data <= 0 {
+		return false;
 	}
 
 	return true;
@@ -137,7 +149,7 @@ func IsDataSpike(time1, time2 int64, b_start int, bandwidth []Bandwidth) (
         }
 
         if ((!hint_lte && hint_wcdma && bandwidth[b_start].Bandwidth == 0.0)) {
-			if  timespent <= SpikeMinTime {
+			if  timespent <= SpikeMinTime && data < SpikeData {
 				data = 0;
 				hint_wcdma = false;
 			} else {

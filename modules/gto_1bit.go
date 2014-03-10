@@ -59,10 +59,10 @@ func (m *Module_GTO1) HandleEvent(event lib.Event,
 
 	if found {
 		if element.jump {
-			m.jumpAssist(m.state, lib.CLTE, spiketime, true);
-			if lib.IsWasteful() {
+			if lib.IsWasteful(m.state) {
 				m.unnecesary ++;
 			}
+			m.jumpAssist(m.state, lib.CLTE, spiketime, true);
 		} else {
 			if islte && m.state == lib.C3G {
 				m.serve_in_3g = true;

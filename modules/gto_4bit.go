@@ -8,6 +8,8 @@ import ("lib")
 type Module_GTO4 struct {
 	state int;
 	delay_transition float64;
+	delay_transition_learn float64;
+	delay_transition_waste float64;
 	delay_transmission float64;
 	switching_energy float64;
 	switch_flag bool;
@@ -20,7 +22,10 @@ type Module_GTO4 struct {
 	serve3g int;
 	count int;
 	avg_count int;
+	avg_spike_time float64;
 }
+
+var event3gtable map[string]int;
 
 func (m *Module_GTO4) Init() bool {
 	m.state = lib.C3G;
@@ -31,7 +36,11 @@ func (m *Module_GTO4) Init() bool {
 	m.count3g = 0;
 	m.serve_in_3g = false;
 	m.count = 0;
+	m.delay_transition_waste = 0.0;
+	m.avg_spike_time = 0.0;
+	m.delay_transition_learn = 0.0;
 	eventtable2 = make(map[string]EventSwitch2);
+	event3gtable = make(map[string]int);
 
 	return true;
 }
@@ -54,28 +63,38 @@ func (m *Module_GTO4) HandleEvent(event lib.Event,
 	element, found := eventtable2[event.Name];
 
 	if islte {
+		m.avg_spike_time += spiketime;
 		m.ltecount ++;
+	} else {
+		event3gtable[event.Name] = 10;
 	}
 
 	if found {
-		if lib.BitJumpN(element.counter, 2) {
-			m.jumpAssist(m.state, lib.CLTE, spiketime, true);
-			if lib.IsWasteful() { 
+		if lib.BitJumpN(element.counter, 8) {
+			if lib.IsWasteful(m.state) {
 				m.unnecesary ++;
+				m.delayHelpWaste(spiketime, m.state, lib.CLTE);
 			}
+			if islte {
+				m.delayHelp(spiketime, m.state, lib.CLTE);
+			}
+			m.jumpAssist(m.state, lib.CLTE, spiketime, true);
 		} else {
 			if islte && m.state == lib.C3G {
 				m.serve_in_3g = true;
 				m.delay_transmission += (data / lib.Bandwidth_3g);
 				if lib.ShouldISwitch(data, spiketime) {
+					m.delay_transition += lib.Switch_3gtolte;
 					m.missed ++;
 				} else {
+					m.delay_transition += (data / lib.Bandwidth_3g); 
 					m.serve3g ++;
 				}
 				m.count3g ++;
 			}
 		}
 	} else if islte {
+		m.delay_transition += lib.Switch_3gtolte;
 		eventtable2[event.Name] = EventSwitch2{15};
 	}
 
@@ -83,7 +102,7 @@ func (m *Module_GTO4) HandleEvent(event lib.Event,
 
 		if islte {
 			if lib.ShouldISwitch(data, spiketime) {
-				element.counter = lib.BitIncN(element.counter, 7);
+				element.counter = lib.BitIncN(element.counter, 15);
 			} else {
 				element.counter = lib.BitDec(element.counter);
 			}
@@ -145,10 +164,6 @@ func (m *Module_GTO4) jumpAssist(prev_state int, current_state int,
 	}
 
 	if prev_state == lib.C3G && current_state == lib.CLTE {
-		if fromevent {
-			m.delay_transition += temp;
-			m.avg_count ++;
-		}
 		m.switching_energy += lib.Energy_3gtolte;
 		m.state = lib.CLTE;
 		m.switch_flag = true;
@@ -172,7 +187,19 @@ func (m *Module_GTO4) GetDelayTransition() float64 {
 }
 
 func (m *Module_GTO4) GetAvgDelayTransition() float64 {
-	return m.GetDelayTransition() / float64(m.avg_count);
+	return m.GetDelayTransition() / float64(m.ltecount);
+}
+
+func (m *Module_GTO4) GetAvgDelayLearnTransition() float64 {
+	return m.delay_transition_learn / float64(m.ltecount);
+}
+
+func (m  *Module_GTO4) GetDelayWasteTransition() float64 {
+	return m.delay_transition_waste;
+}
+
+func (m *Module_GTO4) GetAvgDelayWasteTransition() float64 {
+	return m.delay_transition_waste / float64(m.unnecesary);
 }
 
 func (m *Module_GTO4) GetAvgDelayTransmission() float64 {
@@ -203,6 +230,10 @@ func (m *Module_GTO4) GetTotalLTE() int {
 	return m.ltecount;
 }
 
+func (m *Module_GTO4) GetAvgSpikeTime() float64 {
+	return m.avg_spike_time / float64(m.ltecount);
+}
+
 func (m *Module_GTO4) Reset() bool {
 	//panic ("unimplemented method");
 	m.switch_flag = true;
@@ -214,4 +245,49 @@ func (m *Module_GTO4) GetFirstAvgDelayTransition() float64 {
 	panic("unimplemented method");
 
 	return 0.0;
+}
+
+func (m *Module_GTO4) delayHelp (spiketime float64, prev_state int,
+										current_state int) {
+	temp := lib.Switch_3gtolte - spiketime;
+	if temp < 0.0 {
+		temp = 0.0;
+	}
+	if (prev_state == lib.C3G && current_state == lib.CLTE) {
+		m.delay_transition += temp;
+		m.avg_count ++;
+	}
+}
+
+func (m *Module_GTO4) delayHelpWaste (spiketime float64, prev_state int,
+										current_state int) {
+	temp := lib.Switch_3gtolte - spiketime;
+	if temp < 0.0 {
+		temp = 0.0;
+	}
+	if (prev_state == lib.C3G && current_state == lib.CLTE) {
+		m.delay_transition_waste += temp;
+		m.avg_count ++;
+	}
+}
+
+func (m *Module_GTO4) UniqueLTE() int {
+	count := 0;
+
+	for _, _ = range(eventtable2) {
+		count ++;
+	}
+
+	return count;
+}
+
+func (m *Module_GTO4) Unique3G() int {
+	count := 0;
+
+	for _, _ = range(event3gtable) {
+		count ++;
+	}
+
+	return count;
+
 }

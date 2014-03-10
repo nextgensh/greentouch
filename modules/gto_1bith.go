@@ -71,10 +71,10 @@ func (m *Module_GTO1H) HandleEvent(event lib.Event,
 					m.first_delay_transition += m.GetHiddenLatency(spiketime);
 				}
 			}
-			m.jumpAssist(m.state, lib.CLTE, spiketime, true);
-			if lib.IsWasteful() { 
+			if lib.IsWasteful(m.state) {
 				m.unnecesary ++;
 			}
+			m.jumpAssist(m.state, lib.CLTE, spiketime, true);
 		} else {
 			if islte && m.state == lib.C3G {
 				m.serve_in_3g = true;

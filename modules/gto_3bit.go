@@ -58,11 +58,11 @@ func (m *Module_GTO3) HandleEvent(event lib.Event,
 	}
 
 	if found {
-		if lib.BitJumpN(element.counter, 2) {
-			m.jumpAssist(m.state, lib.CLTE, spiketime, true);
-			if lib.IsWasteful() { 
+		if lib.BitJumpN(element.counter, 4) {
+			if lib.IsWasteful(m.state) {
 				m.unnecesary ++;
 			}
+			m.jumpAssist(m.state, lib.CLTE, spiketime, true);
 		} else {
 			if islte && m.state == lib.C3G {
 				m.serve_in_3g = true;
@@ -83,7 +83,7 @@ func (m *Module_GTO3) HandleEvent(event lib.Event,
 
 		if islte {
 			if lib.ShouldISwitch(data, spiketime) {
-				element.counter = lib.BitIncN(element.counter, 4);
+				element.counter = lib.BitIncN(element.counter, 7);
 			} else {
 				element.counter = lib.BitDec(element.counter);
 			}
