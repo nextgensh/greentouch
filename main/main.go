@@ -106,12 +106,12 @@ func main(){
 		for a:=0; a < len(arr_order); a++ {
 			i := arr_order[a];
 			if i != 11 {
-				fmt.Printf("%s %.4f\n", arr_names[i],
-							arr_modules[i].GetAvgDelayTransition()+
+				fmt.Printf("%s %.4f %.4f 0\n", arr_names[i],
+							arr_modules[i].GetAvgDelayTransition(),
 							arr_modules[i].GetAvgDelayTransmission());
 			} else {
-				fmt.Printf("%s %.4f %.4f\n", arr_names[i],
-							arr_modules[i].GetAvgDelayTransition()+
+				fmt.Printf("%s %.4f %.4f %.4f\n", arr_names[i],
+							arr_modules[i].GetAvgDelayTransition(),
 							arr_modules[i].GetAvgDelayTransmission(),
 							modgto4.GetAvgDelayLearnTransition());
 			}
@@ -171,6 +171,7 @@ func main(){
 	if printfmt == "tracestats" {
 		modstats := modules.Module_stats{};
 		_, _, _ = StartSimulation(&modstats, -1);
+		/*
 		fmt.Printf("%.4f %d %d %.4f %d %d\n", modstats.GetTotalTimeHR(),
 							modstats.GetTotalLTE(),
 							modstats.GetTotal()-
@@ -179,6 +180,86 @@ func main(){
 							modstats.GetData3G())/1024.0,
 							modgto4.UniqueLTE(),
 							modgto4.Unique3G());
+		*/
+		arr := modstats.GetIdleTime();
+
+		/* Sort the resulting array. */
+		for i:=1; i < len(arr); i++ {
+			for j:=i; j >= 1; j-- {
+				if arr[j] < arr[j-1] {
+					temp := arr[j-1];
+					arr[j-1] = arr[j];
+					arr[j] = temp;
+				}
+			}
+		}
+
+		/* Cal total idle time. */
+		sum := 0;
+		for i:=0; i < len(arr); i++ {
+			sum = sum + arr[i];
+		}
+
+		s:=1;
+		for ; s < arr[len(arr)-1]; s=s*2 {
+
+		}
+
+		/* For cummulative count percentage graph. */ 
+		buckets := make([]float64, s+1);
+		curr:=0;
+		count := 0;
+		for bindex:=1; bindex < len(buckets); bindex=bindex*2 {
+			for ; curr < len(arr) && arr[curr] <= bindex; curr ++ {
+				count ++;
+			}
+
+			buckets[bindex] = (float64(count) / float64(len(arr))) * 100;
+		}
+
+		for c:=1; c < len(buckets); c=c*2 {
+				fmt.Printf("%.4f \n", buckets[c]);
+		}
+
+		/* For cummulative time percentage graph. */
+		/*
+		buckets := make([]float64, s+1);
+		curr:=0;
+		tempsum := 0;
+		for bindex:=1; bindex < len(buckets); bindex=bindex*2 {
+			for ; curr < len(arr) && arr[curr] <= bindex; curr ++ {
+				tempsum = tempsum + arr[curr];
+			}
+
+			buckets[bindex] = (float64(tempsum) / float64(sum)) * 100;
+		}
+
+		for c:=1; c < len(buckets); c=c*2 {
+				fmt.Printf("%.4f \n", buckets[c]);
+		}
+		*/
+
+		/* For the non cummulative graph. */
+
+		/*
+		buckets := make([]float64, s+1);
+		curr:=0;
+
+		for bindex:=1; bindex < len(buckets); bindex=bindex*2 {
+			tempsum := 0;
+			for ; curr < len(arr) && arr[curr] <= bindex; curr ++ {
+				tempsum = tempsum + arr[curr];
+			}
+
+			buckets[bindex] = (float64(tempsum) / float64(sum)) * 100;
+		}
+
+		for c:=1; c < len(buckets); c=c*2 {
+				fmt.Printf("%.4f \n", buckets[c]);
+		}
+		*/
+
+		fmt.Printf("\n");
 	}
 
 

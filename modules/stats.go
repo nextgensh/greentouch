@@ -13,6 +13,8 @@ type Module_stats struct {
 	time3g int;
 	totaltime int;
 	count int;
+	idletime []int;
+	idle int;
 }
 
 func (m *Module_stats) Init() bool {
@@ -23,6 +25,7 @@ func (m *Module_stats) Init() bool {
 	m.time3g = 0;
 	m.totaltime = 0;
 	m.count = 0;
+	m.idle = 0;
 
 	return true;
 }
@@ -61,6 +64,15 @@ func (m *Module_stats) ServeData(data float64) bool {
 	} else {
 		m.data3g += data;
 		m.time3g ++;
+	}
+
+	if data == 0 {
+		m.idle ++;
+	} else {
+		if m.idle > 0 {
+			m.idletime = append(m.idletime, m.idle);
+			m.idle = 0;
+		}
 	}
 
 	return true;
@@ -128,6 +140,10 @@ func (m *Module_stats) GetTotalTime() int {
 func (m *Module_stats) Reset() bool {
 
 	return true;
+}
+
+func (m *Module_stats) GetIdleTime() []int {
+	return m.idletime;
 }
 
 /* Total trace time in hrs. */

@@ -1,0 +1,12 @@
+2/27/2014 -
+1. When the delays are calculated if ShouldISwitch() returns
+   a false for an LTE spike then that means the delay encoutered
+   in that case will be less that 1.5 seconds. I have modified
+   the code to reflect this, so now the delay in this instance
+   will be calculated as (data/lib.Bandwidth_3g). Not a big
+   difference in the end result as only one instance of the delay
+   changes from 1.5 to 1.36.
+Files modified to reflect this change -
+a. gto_4bit.go
+b. gto_4bita.go
+c. gto_4bits.go
